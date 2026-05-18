@@ -24,11 +24,26 @@ jobs:
           node-version: 18
           cache: 'npm'
 
+      - name: Debug - List files
+        run: ls -R
+
       - name: Install Dependencies
         run: npm install
 
       - name: Build Web Project
         run: npm run build
+
+      - name: Check dist directory
+        run: ls -R dist
+
+      - name: Add Android Platform if missing
+        run: |
+          if [ ! -d "android" ]; then
+            echo "Android directory not found, adding platform..."
+            npx cap add android
+          else
+            echo "Android directory exists."
+          fi
 
       - name: Sync Capacitor
         run: npx cap sync android
@@ -37,7 +52,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
