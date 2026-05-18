@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "App user profile info",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "lastSeen": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name"]
+    },
+    "HabitLog": {
+      "title": "Habit Log",
+      "description": "A daily log for a specific habit",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "habitId": { "type": "string" },
+        "date": { "type": "string", "description": "YYYY-MM-DD" },
+        "completed": { "type": "boolean" },
+        "count": { "type": "integer" },
+        "progress": { "type": "object", "description": "Specific progress data (e.g. for adhkar)" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "habitId", "date"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "habitLogs/{logId}": {
+      "schema": "HabitLog",
+      "description": "Daily habit tracking logs"
+    },
+    "circles/{circleId}": {
+      "schema": {
+        "title": "Circle",
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "inviteCode": { "type": "string" },
+          "ownerId": { "type": "string" }
+        },
+        "required": ["id", "name", "inviteCode", "ownerId"]
+      },
+      "description": "Social circles for users"
+    },
+    "circleMembers/{memberId}": {
+      "schema": {
+        "title": "Circle Member",
+        "type": "object",
+        "properties": {
+          "circleId": { "type": "string" },
+          "userId": { "type": "string" },
+          "joinedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["circleId", "userId"]
+      },
+      "description": "Mapping of users to circles"
+    },
+    "duas/{duaId}": {
+      "schema": {
+        "title": "User Dua",
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "content": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "content"]
+      },
+      "description": "User's favorite prayers"
+    },
+    "competitions/{compId}": {
+      "schema": {
+        "title": "Competition",
+        "type": "object",
+        "properties": {
+          "circleId": { "type": "string" },
+          "name": { "type": "string" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "creatorId": { "type": "string" },
+          "allowedHabits": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["circleId", "name", "startDate", "endDate", "creatorId"]
+      },
+      "description": "Formal competitions within a circle"
+    }
+  }
+}

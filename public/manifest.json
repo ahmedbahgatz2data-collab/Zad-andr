@@ -1,0 +1,22 @@
+{
+  "name": "زاد - Zad",
+  "short_name": "زاد",
+  "description": "رفيقك التقني للعبادات اليومية وتتبع العادات الإسلامية",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#065f46",
+  "theme_color": "#065f46",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2913/2913008.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2913/2913008.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

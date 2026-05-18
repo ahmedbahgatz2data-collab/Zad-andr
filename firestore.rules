@@ -1,0 +1,115 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    function isVerified() { 
+      return request.auth != null && request.auth.token.email_verified == true; 
+    }
+    function isOwner(uid) { 
+      return isSignedIn() && request.auth.uid == uid; 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'name'])
+        && data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() <= 64
+        && (data.get('email', null) == null || data.email is string)
+        && (data.get('lastSeen', null) == null || data.lastSeen is timestamp);
+    }
+
+    function isValidHabitLog(data) {
+      return data.keys().hasAll(['userId', 'habitId', 'date'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.habitId is string && data.habitId.size() <= 128
+        && data.date is string && data.date.size() == 10 // YYYY-MM-DD
+        && (data.get('userName', null) == null || data.userName is string)
+        && (data.get('completed', null) == null || data.completed is bool)
+        && (data.get('count', null) == null || data.count is int)
+        && (data.get('progress', null) == null || data.progress is map)
+        && (data.get('likes', null) == null || data.likes is list)
+        && (data.get('timestamp', null) == null || data.timestamp is timestamp);
+    }
+
+    function isValidCompetition(data) {
+      return data.keys().hasAll(['circleId', 'name', 'startDate', 'endDate', 'creatorId'])
+        && data.circleId is string && data.circleId.size() <= 128
+        && data.name is string && data.name.size() <= 128
+        && data.startDate is string && data.startDate.size() == 10
+        && data.endDate is string && data.endDate.size() == 10
+        && data.creatorId is string && data.creatorId == request.auth.uid
+        && (data.get('allowedHabits', null) == null || data.allowedHabits is list);
+    }
+
+    // --- Collections ---
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUser(incoming())
+        && incoming().id == userId;
+      allow update: if isOwner(userId) && isValidUser(incoming())
+        && incoming().id == userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'lastSeen', 'email']);
+    }
+
+    match /habitLogs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(incoming().userId) && isValidHabitLog(incoming())
+        && isValidId(logId)
+        && (incoming().get('timestamp', null) == null || incoming().timestamp == request.time);
+      allow update: if isSignedIn() && (
+        (isOwner(existing().userId) && isValidHabitLog(incoming())
+        && incoming().userId == existing().userId
+        && incoming().habitId == existing().habitId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'count', 'timestamp', 'progress', 'likes', 'userName'])
+        && (incoming().get('timestamp', null) == null || incoming().timestamp == request.time))
+        || 
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likes']))
+      );
+      allow delete: if isOwner(existing().userId);
+    }
+    
+    match /circles/{circleId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /circleMembers/{memberId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/circles/$(resource.data.circleId)).data.ownerId == request.auth.uid);
+    }
+
+    match /duas/{duaId} {
+      allow get: if isOwner(resource.data.userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isOwner(incoming().userId);
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /competitions/{compId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidCompetition(incoming());
+      allow update, delete: if isSignedIn() && resource.data.creatorId == request.auth.uid;
+    }
+
+    // Global testing
+    match /test/connection {
+      allow get: if isSignedIn();
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Zad (زاد)",
+  "description": "تطبيق زاد للهواتف الذكية - رفيقك المتكامل للعبادات اليومية، الأذكار، وسنن الصلاة وورد القرآن.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
